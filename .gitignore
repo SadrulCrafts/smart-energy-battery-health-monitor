@@ -1,0 +1,27 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Data: never commit; see README for download instructions
+model/data/raw/*
+!model/data/raw/.gitkeep
+model/data/processed/*
+!model/data/processed/.gitkeep
+
+# Generated outputs
+model/reports/
+*.joblib
+
+# Databases / secrets
+*.db
+.env
+
+# Node (Stage 3)
+node_modules/
+.next/
+
+# Editor / OS
+.vscode/
+Thumbs.db
+.DS_Store
