@@ -1,0 +1,31 @@
+{
+  "model_type": "RandomForestRegressor",
+  "target": "soh_rated_pct",
+  "target_definition": "discharge capacity / 2.0 Ah rated capacity * 100",
+  "feature_columns": [
+    "v_start_v",
+    "v_drop_30s_v",
+    "v_at_60s_v",
+    "v_at_300s_v",
+    "v_at_600s_v",
+    "v_slope_60_600_mv_per_min",
+    "temp_start_c",
+    "temp_rise_600s_c"
+  ],
+  "feature_window_s": 600,
+  "trained_on_cells": [
+    "B0005",
+    "B0006",
+    "B0007",
+    "B0018"
+  ],
+  "n_training_rows": 636,
+  "lobo_overall_metrics": {
+    "mae": 2.225,
+    "rmse": 3.047,
+    "r2": 0.906
+  },
+  "valid_for": "NASA PCoE 18650 cells, 2 A constant-current discharge at about 24 C ambient. Not validated for any other battery or operating condition.",
+  "sklearn_version": "1.9.1",
+  "created": "2026-10-12T15:49:06"
+}
