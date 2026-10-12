@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.2.0] - 2026-10-12
+
+### Added
+- Early-window feature builder (`build_features.py`): eight voltage and temperature
+  features from the first 10 minutes of each discharge, designed to avoid target leakage.
+- Leave-one-battery-out training and comparison of a mean baseline, Linear Regression and
+  Random Forest (`train_soh_model.py`).
+- Saved Random Forest model (`model/artifacts/soh_model.joblib`, recreated by the script)
+  and committed model metadata (`soh_model_metadata.json`).
+- Evaluation script with per-cell metrics, an extrapolation check, two figures and a
+  saved-model load test (`evaluate_model.py`).
+- Stage 2 documentation: prediction task, features, results, findings, limitations and
+  the reasons RUL is not included yet (`model/README.md`).
+
+### Results
+- Random Forest, all held-out predictions: MAE 2.23, RMSE 3.05, R² 0.91
+  (SoH percentage points of 2.0 Ah rated capacity).
+
 ## [0.1.0] - 2026-10-12
 
 ### Added

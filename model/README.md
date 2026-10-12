@@ -1,4 +1,4 @@
-# Model: Dataset Pipeline (Stage 1)
+# Model: Data Pipeline and State of Health Estimation
 
 This folder contains the data pipeline for the NASA lithium-ion battery aging dataset:
 inspection, preprocessing into a per-cycle table, and degradation plots.
@@ -149,3 +149,133 @@ capacities (1.855–2.035 Ah).
 9. **Missing impedance values.** `re_ohm_last` / `rct_ohm_last` are empty for 57 early
    discharge rows (about the first 19 discharges of B0005, B0006 and B0007), because no
    impedance test had been run yet.
+
+   ---
+
+# Stage 2: State of Health estimation (v0.2.0)
+
+## 8. Prediction task
+
+> Given only the **first 10 minutes** of a 2 A constant-current discharge, estimate the
+> cell's capacity-based State of Health.
+
+- **Target:** `soh_rated_pct` = discharge capacity / 2.0 Ah rated capacity × 100.
+  The rated capacity is used (instead of each cell's first capacity) so that the same
+  feature values mean the same absolute capacity for every cell.
+- **Why 10 minutes:** capacity is measured by discharging to the cut-off voltage, so any
+  feature describing the whole discharge (duration, time of peak temperature, minimum
+  voltage) would leak the target. Every discharge lasts more than 30 minutes, so the
+  10-minute window never reaches the cut-off and is unaffected by the different cut-off
+  voltages of the four cells.
+
+## 9. Features (`build_features.py`)
+
+| Feature | Meaning |
+|---|---|
+| `v_start_v` | Voltage at the start of the discharge |
+| `v_drop_30s_v` | Voltage drop in the first 30 s (internal-resistance effect) |
+| `v_at_60s_v`, `v_at_300s_v`, `v_at_600s_v` | Voltage at 1, 5 and 10 minutes |
+| `v_slope_60_600_mv_per_min` | Voltage slope between 1 and 10 minutes |
+| `temp_start_c` | Temperature at the start |
+| `temp_rise_600s_c` | Temperature increase during the first 10 minutes |
+
+Excluded on purpose: `capacity_ah`, `soh_pct`, `duration_s`, `time_to_temp_max_s`, and all
+whole-discharge summaries (target leakage); `re_ohm_last` / `rct_ohm_last` (missing for
+57 early rows; possible future improvement).
+
+Correlation with the target (all cells pooled): slope +0.956, `v_at_600s_v` +0.907,
+`v_drop_30s_v` −0.854, `temp_rise_600s_c` −0.577, `v_start_v` +0.154, `temp_start_c` +0.095.
+
+## 10. Evaluation method (`train_soh_model.py`)
+
+**Leave-one-battery-out (LOBO):** train on three cells, test on the fourth, repeat for
+every cell. The test cell is never seen during training. A random row split was not used,
+because cycles of the same cell would appear in both training and test data.
+
+| Model | Description |
+|---|---|
+| `mean_baseline` | Always predicts the mean SoH of the training cells |
+| `linear_regression` | Standardized features + ordinary least squares |
+| `random_forest` | 300 trees, `min_samples_leaf=2`, `random_state=42` |
+
+## 11. Results
+
+MAE per held-out cell (SoH percentage points of rated capacity):
+
+| Held-out cell | Mean baseline | Linear Regression | Random Forest | Random Forest R² |
+|---|---|---|---|---|
+| B0005 | 8.56 | 2.84 | **1.65** | 0.956 |
+| B0006 | 11.35 | 6.14 | **4.42** | 0.833 |
+| B0007 | 7.43 | 2.24 | **1.53** | 0.945 |
+| B0018 | 7.03 | 2.76 | **1.05** | 0.973 |
+
+All held-out predictions pooled:
+
+| Model | MAE | RMSE | R² |
+|---|---|---|---|
+| Mean baseline | 8.682 | 10.085 | −0.031 |
+| Linear Regression | 3.536 | 4.875 | 0.759 |
+| **Random Forest** | **2.225** | **3.047** | **0.906** |
+
+An MAE of 2.2 percentage points corresponds to about 0.045 Ah on a 2.0 Ah rated cell.
+
+![Leave-one-battery-out predictions](../docs/figures/lobo_predictions.png)
+
+![Random Forest parity plot](../docs/figures/lobo_parity.png)
+
+## 12. Findings
+
+1. **Both models clearly beat the baseline**, and Random Forest beats Linear Regression on
+   every held-out cell.
+2. **B0006 is the hardest cell.** 49 of its 168 targets (27 below, 22 above) lie outside the
+   SoH range of the other three cells. Random Forest cannot predict outside its training
+   range: its B0006 predictions flatten at about 65% (the lowest training value) and stay
+   below about 92% at the start, while the true SoH reaches about 58% and starts near 102%.
+3. **Linear Regression extrapolates, but badly** on B0006: late-life predictions fall far
+   below the true values (to about 40%). Extrapolation is unreliable for both models.
+   Range coverage explains a large part of the B0006 error, but cell-to-cell differences
+   may also contribute; this was not isolated.
+4. **Capacity regeneration is tracked.** The capacity jump near cycle 90 also appears in
+   the predictions, although the model never sees capacity. The early-discharge features
+   reflect the cell's state, not only its cycle count.
+
+## 13. Saved model
+
+`train_soh_model.py` retrains the Random Forest on all four cells and saves:
+
+- `model/artifacts/soh_model.joblib` (not committed; recreate by running the script)
+- `model/artifacts/soh_model_metadata.json` (feature list, target, window length,
+  LOBO metrics, validity statement)
+
+The model is valid **only** for inputs computed the same way (first 600 s of a 2 A
+constant-current discharge) on cells similar to the NASA 18650 cells at about 24 °C.
+It has **not** been validated on any other battery, current or temperature, and must not
+be applied to live sensor data that does not match these conditions.
+
+## 14. Remaining Useful Life (RUL): not included in v0.2.0
+
+A RUL model was deliberately not built yet:
+
+- Only three cells (B0005, B0006, B0018) reach NASA's 1.4 Ah end-of-life level. B0007 does
+  not, so its RUL label is unknown (censored) and must not be invented.
+- Three run-to-failure cells are too few for a meaningful battery-wise RUL evaluation.
+- Capacity regeneration makes "end of life" ambiguous (first crossing vs. permanent
+  crossing of the threshold); a definition must be chosen and justified first.
+
+A future RUL extension would need an explicit EOL definition, handling of censored cells,
+and preferably additional run-to-failure data.
+
+## 15. Stage 2 limitations
+
+- Four cells of one type, one lab, one discharge current, room temperature only.
+- LOBO results with four folds have high uncertainty; one unusual cell (B0006) strongly
+  affects the averages.
+- No hyperparameter tuning was done; default-style settings were chosen in advance.
+- Results describe NASA laboratory data only and are not a claim about commercial
+  batteries or real-world operating conditions.
+
+## 16. How to run Stage 2
+
+    python model/scripts/build_features.py
+    python model/scripts/train_soh_model.py
+    python model/scripts/evaluate_model.py
