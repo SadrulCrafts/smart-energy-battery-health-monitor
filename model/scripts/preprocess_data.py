@@ -55,6 +55,11 @@ REQUIRED_DISCHARGE_FIELDS = [
 # A discharge with fewer samples than this is treated as incomplete
 MIN_SAMPLES = 10
 
+# From the NASA README: rated capacity is 2 Ah, and the experiments were meant to
+# stop at end-of-life = 30% fade in rated capacity, i.e. 1.4 Ah.
+RATED_CAPACITY_AH = 2.0
+NASA_EOL_CAPACITY_AH = 1.4
+
 
 # ---------------------------------------------------------------------------
 # Loading helpers
@@ -104,43 +109,19 @@ def check_discharge(data):
     if any(np.isnan(a).any() for a in arrays):
         return "NaN values in measurements"
 
-    segment = loaded_segment(arrays[1])  # arrays[1] = Current_measured
-    if segment is None:
-        return "no load current found"
-    if segment[1] - segment[0] + 1 < MIN_SAMPLES:
-        return f"loaded part has fewer than {MIN_SAMPLES} samples"
-
     capacity = to_scalar(data["Capacity"])
     if not np.isfinite(capacity) or capacity <= 0:
         return f"invalid capacity {capacity}"
     return None
 
 
-def loaded_segment(current):
-    """
-    Return (first, last) sample index of the part of the record where the
-    load is actually connected.
-
-    Each NASA discharge record also contains a short rest before the load is
-    applied and a recovery period after the load is removed (the voltage climbs
-    back up once the current returns to ~0 A). Those rest/recovery samples are
-    not part of the discharge, so features are computed on the loaded part only.
-    "Loaded" = |current| is at least half of the largest |current| in the record.
-    """
-    magnitude = np.abs(current)
-    if magnitude.max() <= 0:
-        return None
-    loaded = np.flatnonzero(magnitude >= 0.5 * magnitude.max())
-    return int(loaded[0]), int(loaded[-1])
-
-
 def extract_features(data):
     """
-    Summarise one discharge cycle into a few numbers (loaded part only).
+    Summarise one discharge cycle into a few numbers.
 
-    NOTE for Stage 2: 'discharge_duration_s' is almost a direct function of
-    capacity (constant-current discharge until a cut-off voltage), so it must
-    NOT be used as an input when predicting capacity-based SoH (target leakage).
+    NOTE for Stage 2: 'duration_s' is almost a direct function of capacity
+    (constant-current discharge until a cut-off voltage), so it must NOT be
+    used as an input when predicting capacity-based SoH (target leakage).
     It is kept here only for documentation and plotting.
     """
     voltage = np.asarray(data["Voltage_measured"], dtype=float).ravel()
@@ -148,28 +129,19 @@ def extract_features(data):
     temperature = np.asarray(data["Temperature_measured"], dtype=float).ravel()
     time_s = np.asarray(data["Time"], dtype=float).ravel()
 
-    first, last = loaded_segment(current)
-    v = voltage[first:last + 1]
-    i = current[first:last + 1]
-    temp = temperature[first:last + 1]
-    t = time_s[first:last + 1]
-
     return {
         "capacity_ah": to_scalar(data["Capacity"]),
-        "n_samples_total": int(voltage.size),
-        "n_samples_loaded": int(v.size),
-        "discharge_duration_s": float(t[-1] - t[0]),
-        "voltage_rest_start_v": float(voltage[0]),     # before the load is applied
-        "voltage_loaded_start_v": float(v[0]),
-        "voltage_cutoff_v": float(v.min()),
-        "voltage_mean_v": float(v.mean()),
-        "voltage_recovered_end_v": float(voltage[-1]),  # after the load is removed
-        "current_mean_a": float(i.mean()),
-        "temperature_start_c": float(temp[0]),
-        "temperature_max_c": float(temp.max()),
-        "temperature_mean_c": float(temp.mean()),
-        "temperature_rise_c": float(temp.max() - temp[0]),
-        "time_to_temp_max_s": float(t[int(temp.argmax())] - t[0]),
+        "n_samples": int(voltage.size),
+        "duration_s": float(time_s[-1] - time_s[0]),
+        "voltage_start_v": float(voltage[0]),
+        "voltage_min_v": float(voltage.min()),
+        "voltage_mean_v": float(voltage.mean()),
+        "current_mean_a": float(current.mean()),
+        "temperature_start_c": float(temperature[0]),
+        "temperature_max_c": float(temperature.max()),
+        "temperature_mean_c": float(temperature.mean()),
+        "temperature_rise_c": float(temperature.max() - temperature[0]),
+        "time_to_temp_max_s": float(time_s[int(temperature.argmax())] - time_s[0]),
     }
 
 
@@ -222,16 +194,23 @@ def process_battery(battery_id, log):
 
 def add_soh(df):
     """
-    Add a capacity-based State of Health column.
+    Add capacity-based State of Health columns.
 
-    Project definition (operational, NOT a universal standard):
-        SoH (%) = capacity_ah / reference_capacity_ah * 100
-        reference_capacity_ah = first valid discharge capacity of that battery
+    Two versions are stored (both are operational project definitions,
+    NOT universal standards):
+        soh_pct       = capacity_ah / first valid capacity of that battery * 100
+        soh_rated_pct = capacity_ah / RATED_CAPACITY_AH (2.0 Ah, NASA README) * 100
     """
     df = df.sort_values(["battery_id", "discharge_cycle"]).copy()
     df["reference_capacity_ah"] = df.groupby("battery_id")["capacity_ah"].transform("first")
     df["soh_pct"] = df["capacity_ah"] / df["reference_capacity_ah"] * 100
+    df["soh_rated_pct"] = df["capacity_ah"] / RATED_CAPACITY_AH * 100
     return df
+
+
+def reached_nasa_eol(capacity):
+    """True if any discharge capacity of this battery is at or below 1.4 Ah."""
+    return bool((capacity <= NASA_EOL_CAPACITY_AH).any())
 
 
 # ---------------------------------------------------------------------------
@@ -268,11 +247,12 @@ def main():
         first_capacity_ah=("capacity_ah", "first"),
         last_capacity_ah=("capacity_ah", "last"),
         min_soh_pct=("soh_pct", "min"),
-        cutoff_voltage_v=("voltage_cutoff_v", "median"),
+        cutoff_voltage_v=("voltage_min_v", "median"),
+        reached_1_4ah=("capacity_ah", reached_nasa_eol),
     )
     log(summary.round(3).to_string())
 
-    log(f"\nMissing values per column (should be 0 except possibly re/rct):")
+    log("\nMissing values per column (should be 0 except possibly re/rct):")
     missing = df.isna().sum()
     log(missing[missing > 0].to_string() if missing.any() else "  none")
 
