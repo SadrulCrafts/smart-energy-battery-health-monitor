@@ -1,0 +1,7 @@
+# Backend dependencies (Stage 3).
+# The first line also installs everything from the project's root requirements.txt
+# (numpy, pandas, scikit-learn, joblib ...), because the backend loads the SoH model.
+-r ../requirements.txt
+fastapi>=0.110
+uvicorn[standard]>=0.29
+sqlalchemy>=2.0
