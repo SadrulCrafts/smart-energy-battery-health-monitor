@@ -14,6 +14,7 @@ model/reports/
 *.joblib
 
 # Databases / secrets
+backend/data/
 *.db
 .env
 
