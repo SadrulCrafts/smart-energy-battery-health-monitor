@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 
 from .database import DATABASE_FILE, database_is_reachable, init_db
+from .readings_api import router as readings_router
 
 API_VERSION = "0.3.0-dev"
 
@@ -37,7 +38,7 @@ app = FastAPI(
     version=API_VERSION,
     lifespan=lifespan,
 )
-
+app.include_router(readings_router)
 
 @app.get("/health", tags=["system"])
 def health():
