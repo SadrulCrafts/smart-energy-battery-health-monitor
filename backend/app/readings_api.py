@@ -3,9 +3,10 @@ readings_api.py
 ---------------
 Stage 3, Step 3: endpoints for battery readings.
 
-    POST /readings  - store one new reading
-    GET  /status    - latest reading + total count
-    GET  /history   - recent readings (oldest first, ready for charts)
+    POST /readings   - store one new reading (status decided by the alert service)
+    GET  /status     - latest reading + total count
+    GET  /history    - recent readings (oldest first, ready for charts)
+    GET  /thresholds - the alert limits currently in use
 """
 
 from typing import Annotated
@@ -14,9 +15,11 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from . import config
 from .database import get_db
 from .models import Reading, utc_now
 from .schemas import ReadingCreate, ReadingOut, Source, StatusOut
+from .services.alerts import evaluate_reading
 
 router = APIRouter(tags=["readings"])
 
@@ -29,6 +32,9 @@ SOH_NOT_CONNECTED = "Not evaluated: SoH model service not connected yet."
 @router.post("/readings", response_model=ReadingOut, status_code=201)
 def create_reading(payload: ReadingCreate, db: DbSession):
     """Validate and store one measurement. SoH and alerts are decided by the server."""
+    status, alert_message = evaluate_reading(
+        payload.voltage_v, payload.current_a, payload.temperature_c
+    )
     reading = Reading(
         timestamp=payload.timestamp or utc_now(),
         source=payload.source,
@@ -39,8 +45,8 @@ def create_reading(payload: ReadingCreate, db: DbSession):
         soh_pct=None,
         soh_valid=False,
         soh_note=SOH_NOT_CONNECTED,
-        status="normal",
-        alert_message=None,
+        status=status,
+        alert_message=alert_message,
     )
     db.add(reading)
     db.commit()
@@ -76,3 +82,20 @@ def get_history(
     rows = list(db.scalars(query))
     rows.reverse()
     return rows
+
+
+@router.get("/thresholds", tags=["system"])
+def get_thresholds():
+    """Alert limits used by the server (demonstration values, see config.py)."""
+    return {
+        "voltage_low_warning_v": config.VOLTAGE_LOW_WARNING_V,
+        "voltage_low_critical_v": config.VOLTAGE_LOW_CRITICAL_V,
+        "voltage_high_warning_v": config.VOLTAGE_HIGH_WARNING_V,
+        "voltage_high_critical_v": config.VOLTAGE_HIGH_CRITICAL_V,
+        "temperature_high_warning_c": config.TEMPERATURE_HIGH_WARNING_C,
+        "temperature_high_critical_c": config.TEMPERATURE_HIGH_CRITICAL_C,
+        "temperature_low_warning_c": config.TEMPERATURE_LOW_WARNING_C,
+        "current_warning_a": config.CURRENT_WARNING_A,
+        "current_critical_a": config.CURRENT_CRITICAL_A,
+        "note": config.THRESHOLD_NOTE,
+    }
