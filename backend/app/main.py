@@ -16,7 +16,9 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 
 from .database import DATABASE_FILE, database_is_reachable, init_db
+from .live_api import router as live_router
 from .readings_api import router as readings_router
+from .services.live import live_connections
 
 API_VERSION = "0.3.0-dev"
 
@@ -38,7 +40,10 @@ app = FastAPI(
     version=API_VERSION,
     lifespan=lifespan,
 )
+
 app.include_router(readings_router)
+app.include_router(live_router)
+
 
 @app.get("/health", tags=["system"])
 def health():
@@ -50,5 +55,6 @@ def health():
         "version": API_VERSION,
         "database": "ok" if database_ok else "unreachable",
         "database_file": DATABASE_FILE.name,
+        "live_clients": live_connections.count,
         "server_time_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }

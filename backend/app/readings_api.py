@@ -7,6 +7,8 @@ Stage 3, Step 3: endpoints for battery readings.
     GET  /status     - latest reading + total count
     GET  /history    - recent readings (oldest first, ready for charts)
     GET  /thresholds - the alert limits currently in use
+
+Every stored reading is also pushed to connected WebSocket clients (see live_api.py).
 """
 
 from typing import Annotated
@@ -20,6 +22,7 @@ from .database import get_db
 from .models import Reading, utc_now
 from .schemas import ReadingCreate, ReadingOut, Source, StatusOut
 from .services.alerts import evaluate_reading
+from .services.live import live_connections
 
 router = APIRouter(tags=["readings"])
 
@@ -30,7 +33,7 @@ SOH_NOT_CONNECTED = "Not evaluated: SoH model service not connected yet."
 
 
 @router.post("/readings", response_model=ReadingOut, status_code=201)
-def create_reading(payload: ReadingCreate, db: DbSession):
+async def create_reading(payload: ReadingCreate, db: DbSession):
     """Validate and store one measurement. SoH and alerts are decided by the server."""
     status, alert_message = evaluate_reading(
         payload.voltage_v, payload.current_a, payload.temperature_c
@@ -51,7 +54,10 @@ def create_reading(payload: ReadingCreate, db: DbSession):
     db.add(reading)
     db.commit()
     db.refresh(reading)
-    return reading
+
+    stored = ReadingOut.model_validate(reading)
+    await live_connections.broadcast({"type": "reading", "data": stored.model_dump(mode="json")})
+    return stored
 
 
 @router.get("/status", response_model=StatusOut)
