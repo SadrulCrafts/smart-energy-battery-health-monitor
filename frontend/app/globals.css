@@ -1,26 +1,165 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------
+   Brand tokens. Dark is the default theme; light is opt-in with
+   <html data-theme="light">. Status colors are used ONLY for status.
+   ------------------------------------------------------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --bg: #070b14;
+  --glow-a: rgba(59, 108, 255, 0.22);
+  --glow-b: rgba(47, 212, 240, 0.10);
+  --side: rgba(9, 14, 27, 0.72);
+  --panel: rgba(16, 24, 44, 0.72);
+  --panel-solid: #0e1629;
+  --line: rgba(148, 170, 230, 0.13);
+  --line-strong: rgba(148, 170, 230, 0.30);
+  --ink: #eaf0ff;
+  --ink-2: #aab6d4;
+  --muted: #8392b2;
+  --link: #8fb2ff;
+  --focus: #6b97ff;
+
+  /* one color per measured quantity */
+  --volt: #3987e5;
+  --volt-fill: rgba(57, 135, 229, 0.16);
+  --amp: #d95926;
+  --temp: #199e70;
+  --power: #9085e9;
+
+  /* status */
+  --good: #0ca30c;
+  --good-ink: #5fd35f;
+  --good-bg: rgba(12, 163, 12, 0.14);
+  --warn: #fab219;
+  --warn-ink: #fbc24a;
+  --warn-bg: rgba(250, 178, 25, 0.12);
+  --crit: #e05252;
+  --crit-ink: #f58a8a;
+  --crit-bg: rgba(224, 82, 82, 0.16);
+  --warn-band: rgba(250, 178, 25, 0.14);
+  --crit-band: rgba(224, 82, 82, 0.18);
+
+  --hover: rgba(148, 170, 230, 0.08);
+  --active-bg: rgba(59, 108, 255, 0.18);
+  --active-line: rgba(107, 151, 255, 0.40);
+  --track: rgba(148, 170, 230, 0.10);
+  --hatch: rgba(255, 255, 255, 0.16);
+  --grid: rgba(148, 170, 230, 0.12);
+  --shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.75);
 }
 
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #eef2f9;
+  --glow-a: rgba(59, 108, 255, 0.14);
+  --glow-b: rgba(47, 212, 240, 0.12);
+  --side: rgba(255, 255, 255, 0.72);
+  --panel: rgba(255, 255, 255, 0.84);
+  --panel-solid: #ffffff;
+  --line: rgba(15, 30, 70, 0.10);
+  --line-strong: rgba(15, 30, 70, 0.22);
+  --ink: #0b1530;
+  --ink-2: #3d4a68;
+  --muted: #5a6784;
+  --link: #2147c9;
+  --focus: #3b6cff;
+
+  --volt: #2a78d6;
+  --volt-fill: rgba(42, 120, 214, 0.12);
+  --amp: #eb6834;
+  --temp: #1baf7a;
+  --power: #6250d6;
+
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --good-bg: #e5f4e7;
+  --warn: #d99400;
+  --warn-ink: #7a4f00;
+  --warn-bg: #fcf1d6;
+  --crit: #d03b3b;
+  --crit-ink: #a32222;
+  --crit-bg: #fbe7e7;
+  --warn-band: rgba(250, 178, 25, 0.18);
+  --crit-band: rgba(208, 59, 59, 0.13);
+
+  --hover: rgba(15, 30, 70, 0.05);
+  --active-bg: rgba(59, 108, 255, 0.12);
+  --active-line: rgba(59, 108, 255, 0.35);
+  --track: rgba(15, 30, 70, 0.06);
+  --hatch: rgba(15, 30, 70, 0.16);
+  --grid: rgba(15, 30, 70, 0.08);
+  --shadow: 0 24px 48px -30px rgba(20, 40, 90, 0.40);
+}
+
+/* Make the tokens available as Tailwind classes: bg-panel, text-ink-2, border-line, ... */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-bg: var(--bg);
+  --color-side: var(--side);
+  --color-panel: var(--panel);
+  --color-panel-solid: var(--panel-solid);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-link: var(--link);
+  --color-volt: var(--volt);
+  --color-amp: var(--amp);
+  --color-temp: var(--temp);
+  --color-power: var(--power);
+  --color-good: var(--good);
+  --color-good-ink: var(--good-ink);
+  --color-good-bg: var(--good-bg);
+  --color-warn: var(--warn);
+  --color-warn-ink: var(--warn-ink);
+  --color-warn-bg: var(--warn-bg);
+  --color-crit: var(--crit);
+  --color-crit-ink: var(--crit-ink);
+  --color-crit-bg: var(--crit-bg);
+  --color-hover: var(--hover);
+  --color-active: var(--active-bg);
+  --color-cobalt: #3b6cff;
+  --color-ion: #2fd4f0;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-display: "Unbounded Variable", "IBM Plex Sans", sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(900px 520px at 12% -8%, var(--glow-a), transparent 62%),
+    radial-gradient(760px 520px at 100% 6%, var(--glow-b), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+  font-family: var(--font-sans);
+}
+
+a {
+  color: var(--link);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* The only two continuous animations in the app */
+@keyframes shimmer {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(-100%); }
+}
+@keyframes livepulse {
+  0% { box-shadow: 0 0 0 0 rgba(12, 163, 12, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(12, 163, 12, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(12, 163, 12, 0); }
+}
+.animate-shimmer { animation: shimmer 3.4s ease-in-out infinite; }
+.animate-live { animation: livepulse 2s ease-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer,
+  .animate-live { animation: none; }
 }
