@@ -1,3 +1,5 @@
+import BackendCheck from "@/components/BackendCheck";
+
 export default function Home() {
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-8 p-8">
@@ -15,19 +17,7 @@ export default function Home() {
         </div>
       </div>
 
-      <p className="font-display text-6xl font-semibold tracking-tighter">
-        3.842 <span className="text-2xl text-ink-2">V</span>
-      </p>
-
-      <div className="flex flex-wrap gap-3">
-        <span className="rounded-full bg-good-bg px-3 py-1.5 text-sm font-semibold text-good-ink">Normal</span>
-        <span className="rounded-full bg-warn-bg px-3 py-1.5 text-sm font-semibold text-warn-ink">Warning</span>
-        <span className="rounded-full bg-crit-bg px-3 py-1.5 text-sm font-semibold text-crit-ink">Critical</span>
-      </div>
-
-      <p className="max-w-prose text-ink-2">
-        Design check: brand colors and fonts are loaded. The real dashboard comes next.
-      </p>
+      <BackendCheck />
     </main>
   );
 }

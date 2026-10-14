@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .database import DATABASE_FILE, database_is_reachable, init_db
 from .live_api import router as live_router
@@ -44,6 +45,16 @@ app = FastAPI(
     ),
     version=API_VERSION,
     lifespan=lifespan,
+)
+
+# The dashboard runs on another address (Next.js on port 3000), so the browser
+# needs the API's permission to read its answers. This is called CORS.
+FRONTEND_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=FRONTEND_ORIGINS,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 app.include_router(readings_router)
