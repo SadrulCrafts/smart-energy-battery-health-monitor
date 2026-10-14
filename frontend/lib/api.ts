@@ -69,6 +69,42 @@ export interface ModelInfo {
   valid_for: string | null;
 }
 
+/** The 8 early-discharge features the SoH model needs (see model/scripts/build_features.py). */
+export interface SohFeatures {
+  v_start_v: number;
+  v_drop_30s_v: number;
+  v_at_60s_v: number;
+  v_at_300s_v: number;
+  v_at_600s_v: number;
+  v_slope_60_600_mv_per_min: number;
+  temp_start_c: number;
+  temp_rise_600s_c: number;
+}
+
+export interface SohPrediction {
+  soh_pct: number | null;
+  soh_valid: boolean;
+  soh_note: string;
+  out_of_range: string[];
+}
+
+/** A real NASA row: cell B0005, discharge cycle 1 (measured SoH 92.82 % of rated 2.0 Ah). */
+export const NASA_EXAMPLE = {
+  cell: "B0005",
+  cycle: 1,
+  measuredSohPct: 92.82,
+  features: {
+    v_start_v: 4.1915,
+    v_drop_30s_v: 0.1516,
+    v_at_60s_v: 3.9458,
+    v_at_300s_v: 3.8289,
+    v_at_600s_v: 3.7495,
+    v_slope_60_600_mv_per_min: -19.386,
+    temp_start_c: 24.33,
+    temp_rise_600s_c: 5.0745,
+  } satisfies SohFeatures,
+};
+
 /** Messages pushed by the backend over the WebSocket (see backend/app/live_api.py). */
 export type LiveMessage =
   | { type: "hello"; message: string; clients: number }
@@ -77,10 +113,10 @@ export type LiveMessage =
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 export const WS_URL = API_URL.replace(/^http/, "ws") + "/ws";
 
-async function getJson<T>(path: string): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(API_URL + path, { cache: "no-store" });
+    response = await fetch(API_URL + path, { cache: "no-store", ...init });
   } catch {
     throw new Error(`Backend not reachable at ${API_URL}. Is uvicorn running?`);
   }
@@ -91,10 +127,16 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 export const api = {
-  health: () => getJson<Health>("/health"),
-  status: () => getJson<StatusOut>("/status"),
+  health: () => request<Health>("/health"),
+  status: () => request<StatusOut>("/status"),
   history: (limit = 120, source?: Source) =>
-    getJson<Reading[]>(`/history?limit=${limit}${source ? `&source=${source}` : ""}`),
-  thresholds: () => getJson<Thresholds>("/thresholds"),
-  modelInfo: () => getJson<ModelInfo>("/soh/model-info"),
+    request<Reading[]>(`/history?limit=${limit}${source ? `&source=${source}` : ""}`),
+  thresholds: () => request<Thresholds>("/thresholds"),
+  modelInfo: () => request<ModelInfo>("/soh/model-info"),
+  predictSoh: (features: SohFeatures) =>
+    request<SohPrediction>("/soh/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(features),
+    }),
 };
