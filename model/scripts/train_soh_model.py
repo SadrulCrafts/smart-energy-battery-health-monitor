@@ -142,6 +142,15 @@ def main():
         "trained_on_cells": sorted(df["battery_id"].unique().tolist()),
         "n_training_rows": int(len(df)),
         "lobo_overall_metrics": {k: float(v) for k, v in overall.loc["random_forest"].items()},
+        # Lowest and highest value of every input seen during training.
+        # The backend refuses to predict when an input falls outside these limits.
+        "feature_ranges": {
+            column: {"min": float(df[column].min()), "max": float(df[column].max())}
+            for column in FEATURE_COLUMNS
+        },
+        # A Random Forest can never predict outside the SoH range it was trained on
+        "target_range": {"min": float(df[TARGET_COLUMN].min()),
+                         "max": float(df[TARGET_COLUMN].max())},
         "valid_for": ("NASA PCoE 18650 cells, 2 A constant-current discharge at about 24 C "
                       "ambient. Not validated for any other battery or operating condition."),
         "sklearn_version": sklearn.__version__,
@@ -156,4 +165,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()

@@ -27,9 +27,10 @@ from .services.live import live_connections
 router = APIRouter(tags=["readings"])
 
 DbSession = Annotated[Session, Depends(get_db)]
-
-# Shown until the SoH model service is connected in a later step
-SOH_NOT_CONNECTED = "Not evaluated: SoH model service not connected yet."
+# A single reading (one V, I, T) cannot be used by the SoH model: it needs features
+# from the first 600 s of a 2 A discharge. See GET /soh/model-info.
+SOH_NOT_CONNECTED = ("Not evaluated: a single reading is not enough. The SoH model needs "
+"features from the first 600 s of a 2 A discharge (see /soh/model-info).")
 
 
 @router.post("/readings", response_model=ReadingOut, status_code=201)

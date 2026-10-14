@@ -19,6 +19,8 @@ from .database import DATABASE_FILE, database_is_reachable, init_db
 from .live_api import router as live_router
 from .readings_api import router as readings_router
 from .services.live import live_connections
+from .services.soh_model import get_soh_model
+from .soh_api import router as soh_router
 
 API_VERSION = "0.3.0-dev"
 
@@ -27,6 +29,9 @@ API_VERSION = "0.3.0-dev"
 async def lifespan(app: FastAPI):
     # Runs once when the server starts
     init_db()
+    soh_model = get_soh_model()  # load the model now, not on the first request
+    if not soh_model.available:
+        print(f"WARNING: SoH model not available: {soh_model.problem}")
     yield
     # Code after "yield" would run when the server stops (nothing needed yet)
 
@@ -43,6 +48,7 @@ app = FastAPI(
 
 app.include_router(readings_router)
 app.include_router(live_router)
+app.include_router(soh_router)
 
 
 @app.get("/health", tags=["system"])
@@ -55,6 +61,7 @@ def health():
         "version": API_VERSION,
         "database": "ok" if database_ok else "unreachable",
         "database_file": DATABASE_FILE.name,
+        "soh_model": "loaded" if get_soh_model().available else "not available",
         "live_clients": live_connections.count,
         "server_time_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }

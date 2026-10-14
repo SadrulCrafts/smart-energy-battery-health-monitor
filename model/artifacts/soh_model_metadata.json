@@ -25,7 +25,45 @@
     "rmse": 3.047,
     "r2": 0.906
   },
+  "feature_ranges": {
+    "v_start_v": {
+      "min": 4.157544974448367,
+      "max": 4.2331462538907605
+    },
+    "v_drop_30s_v": {
+      "min": 0.1377174422061369,
+      "max": 0.2955422970834718
+    },
+    "v_at_60s_v": {
+      "min": 3.8152335614408472,
+      "max": 3.9802127282104895
+    },
+    "v_at_300s_v": {
+      "min": 3.6247831030858766,
+      "max": 3.8669901274743377
+    },
+    "v_at_600s_v": {
+      "min": 3.4861778352521973,
+      "max": 3.7803364068301417
+    },
+    "v_slope_60_600_mv_per_min": {
+      "min": -34.54013848812284,
+      "max": -17.807908906517508
+    },
+    "temp_start_c": {
+      "min": 22.352538907436102,
+      "max": 26.647373946169797
+    },
+    "temp_rise_600s_c": {
+      "min": 4.205372936741497,
+      "max": 5.839141666840074
+    }
+  },
+  "target_range": {
+    "min": 57.6909165798125,
+    "max": 101.7668795502799
+  },
   "valid_for": "NASA PCoE 18650 cells, 2 A constant-current discharge at about 24 C ambient. Not validated for any other battery or operating condition.",
   "sklearn_version": "1.9.1",
-  "created": "2026-10-12T15:49:06"
+  "created": "2026-10-14T20:09:36"
 }
