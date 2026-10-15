@@ -8,6 +8,13 @@ All notable changes to this project are documented in this file.
 - Alert hysteresis: an alert clears only after the value moves back past its threshold by
   a margin (0.05 V, 2 °C, 0.1 A), tracked separately per device. The message says when a
   held alert will clear. Margins are shown in `/thresholds`.
+- Arduino Uno firmware (`firmware/battery_monitor`): reads the INA219 and DS18B20 once per
+  second, prints `READING` lines for the bridge, and protects the cell on its own: relay off
+  at power-up, cut-off at 3.00 V (3 readings in a row), over-temperature and lost-sensor
+  cut-offs, load stays off until a manual reset. Compiled for the Uno and its logic checked
+  in a PC simulation; not yet tested on real hardware.
+- Hardware guide (`docs/hardware/wiring.md`): parts, power path, signal wiring, pre-power
+  checklist, step-by-step bring-up and charging rules.
 - Serial bridge (`backend/bridge.py`): reads the Arduino's `READING v=.. i=.. t=.. load=..`
   lines over USB and posts them as `source = "sensor"`; ignores broken lines; `--fake` mode
   with a fake Arduino on an in-memory serial port (data labeled `simulated`), `--dry-run`

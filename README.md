@@ -55,7 +55,7 @@ Each stored reading has a `source` field, and the dashboard shows it on screen.
 | v0.1.0 | NASA dataset inspection, preprocessing and degradation plots | Done |
 | v0.2.0 | State of Health model with battery-wise evaluation | Done |
 | v0.3.0 | FastAPI backend, SQLite, live WebSocket updates and web dashboard (simulated data) | Done |
-| v0.4.0 | Arduino sensor integration (INA219, DS18B20, relay cut-off) | Planned |
+| v0.4.0 | Arduino sensor integration (INA219, DS18B20, relay cut-off) | In progress: bridge, firmware and wiring guide ready, waiting for parts |
 | v1.0.0 | Integrated, tested and documented portfolio release | Planned |
 
 ## State of Health model
@@ -123,7 +123,9 @@ Open http://localhost:3000
     pip install -r backend/requirements-dev.txt
     python -m pytest backend
 
-More detail: [backend/README.md](backend/README.md) and [frontend/README.md](frontend/README.md).
+More detail: [backend/README.md](backend/README.md), [frontend/README.md](frontend/README.md),
+[firmware/README.md](firmware/README.md) and the hardware guide
+[docs/hardware/wiring.md](docs/hardware/wiring.md).
 
 ## Known limitations
 
