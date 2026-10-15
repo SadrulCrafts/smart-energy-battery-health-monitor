@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.3.0] - 2026-10-15
+
+### Added
+- FastAPI backend with SQLite storage (`backend/`): `/health`, `POST /readings`, `/status`,
+  `/history`, `/thresholds`. Clients can only send measurements; the server decides the
+  status and the SoH note.
+- Alert service with demonstration thresholds in one place (`app/config.py`): every rule
+  that fires is reported and the most severe one sets normal, warning or critical.
+- Live updates: WebSocket `/ws` pushes each stored reading; `ws_listen.py` test client.
+- Guarded SoH model service (`app/services/soh_model.py`, `/soh/model-info`,
+  `/soh/predict`): loads the model once and refuses to predict when the model is missing or
+  any feature is outside its training range. Training now saves each feature's range in the
+  model metadata.
+- Simulator (`backend/simulator.py`) that sends readings labeled `source = "simulated"`.
+- Next.js dashboard (`frontend/`): sidebar, live status banner, battery graphic, voltage
+  chart with alert bands, current, temperature and power tiles, recent readings table,
+  honest State of Health panel with a NASA example, dark and light themes, phone layout,
+  automatic reconnect.
+- Brand identity: logo mark, Cobalt-to-Ion colors, Unbounded and IBM Plex Sans fonts.
+- Backend and dashboard documentation (`backend/README.md`, `frontend/README.md`).
+
+### Known limitations
+- The dashboard runs on simulated data; sensor hardware follows in v0.4.0.
+- The SoH model is not validated for this project's own hardware (about 0.4 A load versus
+  NASA's 2 A discharges).
+- Alerts have no hysteresis yet; the theme choice is not remembered.
+
 ## [0.2.0] - 2026-10-12
 
 ### Added

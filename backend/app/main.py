@@ -23,7 +23,7 @@ from .services.live import live_connections
 from .services.soh_model import get_soh_model
 from .soh_api import router as soh_router
 
-API_VERSION = "0.3.0-dev"
+API_VERSION = "0.3.0"
 
 
 @asynccontextmanager
