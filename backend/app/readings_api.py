@@ -1,7 +1,7 @@
 """
 readings_api.py
 ---------------
-Stage 3, Step 3: endpoints for battery readings.
+Endpoints for battery readings.
 
     POST /readings   - store one new reading (status decided by the alert service)
     GET  /status     - latest reading + total count
@@ -21,23 +21,26 @@ from . import config
 from .database import get_db
 from .models import Reading, utc_now
 from .schemas import ReadingCreate, ReadingOut, Source, StatusOut
-from .services.alerts import evaluate_reading
+from .services.alerts import alert_tracker
 from .services.live import live_connections
 
 router = APIRouter(tags=["readings"])
 
 DbSession = Annotated[Session, Depends(get_db)]
+
 # A single reading (one V, I, T) cannot be used by the SoH model: it needs features
 # from the first 600 s of a 2 A discharge. See GET /soh/model-info.
 SOH_NOT_CONNECTED = ("Not evaluated: a single reading is not enough. The SoH model needs "
-"features from the first 600 s of a 2 A discharge (see /soh/model-info).")
+                     "features from the first 600 s of a 2 A discharge (see /soh/model-info).")
 
 
 @router.post("/readings", response_model=ReadingOut, status_code=201)
 async def create_reading(payload: ReadingCreate, db: DbSession):
     """Validate and store one measurement. SoH and alerts are decided by the server."""
-    status, alert_message = evaluate_reading(
-        payload.voltage_v, payload.current_a, payload.temperature_c
+    # Each device has its own alert memory (hysteresis), so two devices never mix
+    status, alert_message = alert_tracker.evaluate(
+        (payload.source, payload.device_id),
+        payload.voltage_v, payload.current_a, payload.temperature_c,
     )
     reading = Reading(
         timestamp=payload.timestamp or utc_now(),
@@ -104,5 +107,8 @@ def get_thresholds():
         "temperature_low_warning_c": config.TEMPERATURE_LOW_WARNING_C,
         "current_warning_a": config.CURRENT_WARNING_A,
         "current_critical_a": config.CURRENT_CRITICAL_A,
+        "voltage_hysteresis_v": config.VOLTAGE_HYSTERESIS_V,
+        "temperature_hysteresis_c": config.TEMPERATURE_HYSTERESIS_C,
+        "current_hysteresis_a": config.CURRENT_HYSTERESIS_A,
         "note": config.THRESHOLD_NOTE,
     }

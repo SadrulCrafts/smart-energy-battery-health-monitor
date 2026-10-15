@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+- Alert hysteresis: an alert clears only after the value moves back past its threshold by
+  a margin (0.05 V, 2 °C, 0.1 A), tracked separately per device. The message says when a
+  held alert will clear. Margins are shown in `/thresholds`.
+- Backend test suite (`backend/tests`, 38 tests with pytest): alert thresholds and
+  hysteresis, all endpoints, WebSocket push, CORS, and the SoH service's refusals.
+
 ## [0.3.0] - 2026-10-15
 
 ### Added

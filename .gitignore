@@ -17,6 +17,7 @@ model/reports/
 backend/data/
 *.db
 .env
+.pytest_cache/
 
 # Node (Stage 3)
 node_modules/

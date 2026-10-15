@@ -65,6 +65,14 @@ severe one decides the status.
 These are **demonstration values**, not certified safety limits. Replace them with the
 datasheet limits of the actual cell before connecting hardware.
 
+**Hysteresis.** An alert starts at its threshold but only clears once the value has moved
+back past it by a margin (0.05 V, 2 °C, 0.1 A). Warning starts at 3.20 V and clears above
+3.25 V, so a voltage hovering around 3.20 V does not switch between normal and warning on
+every reading. While an alert is held this way, the message says when it will clear, for
+example `Voltage 3.220 V is recovering (warning clears above 3.25 V)`. Each device has its
+own memory, kept in the running server; after a restart the first reading of each device
+is judged on the thresholds alone.
+
 ## SoH model service
 
 `app/services/soh_model.py` loads `model/artifacts/soh_model.joblib` once at start-up.
@@ -88,6 +96,16 @@ a 10 Ω load (discharge to 3.0 V, rest, charge to 4.2 V, rest, repeat).
     python backend/simulator.py                    # one reading every 2 s, 60x time
     python backend/simulator.py --speed 300        # faster cycles
     python backend/simulator.py --steps 20         # send 20 readings, then stop
+
+## Tests
+
+    pip install -r backend/requirements-dev.txt
+    python -m pytest backend
+
+The tests use an empty in-memory database, so they never touch `monitor.db`. They cover
+the alert thresholds and hysteresis, every endpoint, the WebSocket push, CORS, and the
+SoH service's refusals. The tests that need the trained model are skipped when the model
+file is missing.
 
 ## Live test client
 
@@ -113,14 +131,15 @@ backend/
 │       ├── alerts.py      status decision
 │       ├── live.py        connected WebSocket clients
 │       └── soh_model.py   guarded model loading and prediction
+├── tests/                 pytest tests (alerts, API, SoH service)
 ├── simulator.py
 ├── ws_listen.py
-└── requirements.txt
+├── requirements.txt
+└── requirements-dev.txt   adds pytest and httpx
 ```
 
 ## Known limitations
 
-- No hysteresis on alerts: the status can flicker while a value sits right at a limit.
 - Database calls inside the async `POST /readings` endpoint are synchronous; fine for one
   device, not for many.
 - No authentication. CORS allows only the local dashboard (`localhost:3000`).

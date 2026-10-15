@@ -118,6 +118,11 @@ Open http://localhost:3000
     .\.venv\Scripts\Activate.ps1
     python backend/simulator.py --speed 300
 
+**6. Tests** (optional)
+
+    pip install -r backend/requirements-dev.txt
+    python -m pytest backend
+
 More detail: [backend/README.md](backend/README.md) and [frontend/README.md](frontend/README.md).
 
 ## Known limitations
@@ -127,9 +132,7 @@ More detail: [backend/README.md](backend/README.md) and [frontend/README.md](fro
 - The SoH model is validated only for NASA-style 2 A constant-current discharges. The
   planned hardware load draws about 0.4 A, so the model is **not** validated for this
   project's own sensor data.
-- Alert thresholds are demonstration values, not certified safety limits. There is no
-  hysteresis yet, so the status can switch back and forth while the voltage sits right at a
-  limit.
+- Alert thresholds are demonstration values, not certified safety limits.
 - Single-user local prototype: no authentication, and the API only accepts browser
   requests from `localhost:3000`.
 - Database calls inside the async `POST /readings` endpoint run synchronously. This is fine

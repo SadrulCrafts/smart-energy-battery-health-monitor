@@ -1,0 +1,4 @@
+# Extra packages for running the backend tests:  pip install -r backend/requirements-dev.txt
+-r requirements.txt
+pytest>=8.0
+httpx>=0.27
