@@ -8,8 +8,13 @@ All notable changes to this project are documented in this file.
 - Alert hysteresis: an alert clears only after the value moves back past its threshold by
   a margin (0.05 V, 2 °C, 0.1 A), tracked separately per device. The message says when a
   held alert will clear. Margins are shown in `/thresholds`.
-- Backend test suite (`backend/tests`, 38 tests with pytest): alert thresholds and
-  hysteresis, all endpoints, WebSocket push, CORS, and the SoH service's refusals.
+- Serial bridge (`backend/bridge.py`): reads the Arduino's `READING v=.. i=.. t=.. load=..`
+  lines over USB and posts them as `source = "sensor"`; ignores broken lines; `--fake` mode
+  with a fake Arduino on an in-memory serial port (data labeled `simulated`), `--dry-run`
+  and `--list-ports`. Adds `pyserial` to the backend requirements.
+- Backend test suite (`backend/tests`, 54 tests with pytest): alert thresholds and
+  hysteresis, all endpoints, WebSocket push, CORS, the SoH service's refusals, and the
+  serial bridge.
 
 ## [0.3.0] - 2026-10-15
 

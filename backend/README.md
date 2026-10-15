@@ -97,14 +97,36 @@ a 10 Ω load (discharge to 3.0 V, rest, charge to 4.2 V, rest, repeat).
     python backend/simulator.py --speed 300        # faster cycles
     python backend/simulator.py --steps 20         # send 20 readings, then stop
 
+## Serial bridge (Arduino)
+
+`bridge.py` reads lines from the Arduino over USB and posts each reading to the backend.
+
+    python backend/bridge.py --list-ports            # find the Arduino's port
+    python backend/bridge.py --port COM3             # real hardware, stored as source = "sensor"
+    python backend/bridge.py --fake                  # no hardware, stored as source = "simulated"
+    python backend/bridge.py --port COM3 --dry-run   # print only, send nothing
+
+The Arduino prints one line per message at 115200 baud:
+
+    READING v=3.842 i=-0.381 t=26.40 load=1
+    INFO <text>
+    ERROR <text>
+
+`v` is the cell voltage (V), `i` the current (A, negative while discharging), `t` the cell
+temperature (°C, `nan` if the sensor is missing) and `load` whether the load relay is closed.
+Broken lines, such as the noise a board sends right after the port opens, are ignored.
+`--fake` runs a fake Arduino inside the bridge, writing the same lines into an in-memory
+serial port, so the whole path can be tested without hardware. Its data is always labeled
+`simulated`.
+
 ## Tests
 
     pip install -r backend/requirements-dev.txt
     python -m pytest backend
 
 The tests use an empty in-memory database, so they never touch `monitor.db`. They cover
-the alert thresholds and hysteresis, every endpoint, the WebSocket push, CORS, and the
-SoH service's refusals. The tests that need the trained model are skipped when the model
+the alert thresholds and hysteresis, every endpoint, the WebSocket push, CORS, the
+SoH service's refusals, and the serial bridge's line parsing. The tests that need the trained model are skipped when the model
 file is missing.
 
 ## Live test client
@@ -132,6 +154,7 @@ backend/
 │       ├── live.py        connected WebSocket clients
 │       └── soh_model.py   guarded model loading and prediction
 ├── tests/                 pytest tests (alerts, API, SoH service)
+├── bridge.py              Arduino (USB serial) -> POST /readings
 ├── simulator.py
 ├── ws_listen.py
 ├── requirements.txt

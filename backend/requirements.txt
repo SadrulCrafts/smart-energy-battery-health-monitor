@@ -5,3 +5,4 @@
 fastapi>=0.110
 uvicorn[standard]>=0.29
 sqlalchemy>=2.0
+pyserial>=3.5          # serial bridge to the Arduino (bridge.py)
