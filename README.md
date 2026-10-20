@@ -1,5 +1,7 @@
 # Smart Energy & Battery Health Monitoring System
 
+[![CI](https://github.com/SadrulCrafts/smart-energy-battery-health-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/SadrulCrafts/smart-energy-battery-health-monitor/actions/workflows/ci.yml)
+
 An end-to-end prototype that combines Machine Learning, a FastAPI backend, a live web
 dashboard and (next) IoT sensors to monitor a lithium-ion cell.
 
@@ -135,6 +137,10 @@ Open http://localhost:3000
 
     pip install -r backend/requirements-dev.txt
     python -m pytest backend
+
+GitHub Actions runs the same tests, a lint and production build of the dashboard, and an
+Arduino Uno compile of the firmware on every push. The 5 tests that need the trained model
+are skipped there, because the model file is not stored in Git.
 
 More detail: [backend/README.md](backend/README.md), [frontend/README.md](frontend/README.md),
 [firmware/README.md](firmware/README.md) and the hardware guide

@@ -14,6 +14,10 @@ All notable changes to this project are documented in this file.
 - The dashboard remembers the dark or light theme in the browser and applies it before the
   page is drawn.
 - README architecture diagram drawn with Mermaid.
+- Continuous integration (`.github/workflows/ci.yml`): on every push, GitHub Actions runs
+  the backend tests (Python 3.11), lints and builds the dashboard (Node 24), and compiles
+  the firmware for the Arduino Uno. Tests that need the trained model are skipped there
+  because the model file is not stored in Git. CI badge in the README.
 - Alert hysteresis: an alert clears only after the value moves back past its threshold by
   a margin (0.05 V, 2 °C, 0.1 A), tracked separately per device. The message says when a
   held alert will clear. Margins are shown in `/thresholds`.
