@@ -114,6 +114,38 @@ export const NASA_EXAMPLE = {
   } satisfies SohFeatures,
 };
 
+/** One measured discharge (GET /capacity, see backend/app/services/capacity.py). */
+export interface DischargeRun {
+  start: string;
+  end: string;
+  duration_s: number;
+  readings: number;
+  rest_voltage_v: number | null;
+  start_voltage_v: number;
+  end_voltage_v: number;
+  capacity_mah: number;
+  energy_wh: number;
+  mean_current_a: number;
+  max_temperature_c: number | null;
+  temperature_rise_c: number | null;
+  ended: "cutoff" | "stopped_early" | "data_gap" | "in_progress";
+  started_full: boolean;
+  soh_pct: number | null;
+  soh_note: string;
+  warnings: string[];
+}
+
+export interface Capacity {
+  source: Source;
+  device_id: string | null;
+  available: boolean;
+  note: string;
+  rated_capacity_mah: number;
+  cutoff_v: number;
+  full_rest_v: number;
+  runs: DischargeRun[];
+}
+
 /** Messages pushed by the backend over the WebSocket (see backend/app/live_api.py). */
 export type LiveMessage =
   | { type: "hello"; message: string; clients: number }
@@ -146,6 +178,11 @@ export const api = {
     return request<Reading[]>(`/history?${query.toString()}`);
   },
   thresholds: () => request<Thresholds>("/thresholds"),
+  capacity: (source: Source, deviceId: string | null) => {
+    const query = new URLSearchParams({ source });
+    if (deviceId) query.set("device_id", deviceId);
+    return request<Capacity>(`/capacity?${query.toString()}`);
+  },
   modelInfo: () => request<ModelInfo>("/soh/model-info"),
   predictSoh: (features: SohFeatures) =>
     request<SohPrediction>("/soh/predict", {

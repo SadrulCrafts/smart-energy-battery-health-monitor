@@ -98,6 +98,44 @@ class DeviceOut(BaseModel):
         return as_utc(value)
 
 
+class DischargeRunOut(BaseModel):
+    """One measured discharge (see services/capacity.py)."""
+    start: datetime
+    end: datetime
+    duration_s: float
+    readings: int
+    rest_voltage_v: float | None
+    start_voltage_v: float
+    end_voltage_v: float
+    capacity_mah: float
+    energy_wh: float
+    mean_current_a: float
+    max_temperature_c: float | None
+    temperature_rise_c: float | None
+    ended: Literal["cutoff", "stopped_early", "data_gap", "in_progress"]
+    started_full: bool
+    soh_pct: float | None
+    soh_note: str
+    warnings: list[str]
+
+    @field_validator("start", "end")
+    @classmethod
+    def times_to_utc(cls, value):
+        return as_utc(value)
+
+
+class CapacityOut(BaseModel):
+    """GET /capacity: measured discharges of one device, most recent first."""
+    source: Source
+    device_id: str | None
+    available: bool
+    note: str
+    rated_capacity_mah: float
+    cutoff_v: float
+    full_rest_v: float
+    runs: list[DischargeRunOut]
+
+
 class StatusOut(BaseModel):
     has_data: bool
     total_readings: int

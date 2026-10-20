@@ -38,6 +38,7 @@ Production build check:
 | Tiles | Current, temperature, power (voltage times current) and the number of readings stored for the shown device |
 | Recent readings | The newest 8 readings with their status |
 | State of health | "Not evaluated" for live readings, the model's details, and a button that runs the model on one NASA example |
+| Measured capacity | For sensor data: mAh delivered in the latest discharge, how it ended, and a measured State of Health only when the run went from full to the cut-off. For simulated data it explains why nothing is measured |
 
 If the backend stops, the header shows "Offline, reconnecting" and the page reconnects on
 its own, filling any gap from `/history`.

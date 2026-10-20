@@ -26,6 +26,10 @@ dashboard and (next) IoT sensors to monitor a lithium-ion cell.
 - **Dashboard** (Next.js + Tailwind + Recharts): live battery graphic, voltage chart with
   alert zones, current, temperature and power, recent readings, a device picker when several devices send data, dark and light
   themes (remembered), phone layout.
+- **Measured capacity** (coulomb counting): for sensor readings, the backend adds up the
+  current over each discharge and reports the capacity in mAh. A State of Health is only
+  given for a complete run from a full charge to the cut-off; otherwise the panel says why
+  not. Tested with made-up data so far; the first real measurement comes with v0.4.0.
 - **Simulator** that sends labeled simulated readings in the same format the Arduino
   bridge will use later.
 

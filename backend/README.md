@@ -27,6 +27,7 @@ in Git. To start again with an empty database, stop the server and delete that f
 | GET | `/history?limit=100&source=simulated&device_id=simulator-1` | Recent readings, oldest first (for charts); both filters optional |
 | GET | `/devices` | Every device that has sent readings: source, count, last seen, last status |
 | GET | `/thresholds` | Alert limits currently in use |
+| GET | `/capacity?source=sensor&device_id=arduino-uno-1` | Measured capacity of each discharge (coulomb counting), most recent first; sensor data only |
 | WS | `/ws` | Pushes every newly stored reading as `{"type": "reading", "data": {...}}` |
 | GET | `/soh/model-info` | Model details, training ranges and validity conditions |
 | POST | `/soh/predict` | SoH estimate from the 8 early-discharge features |
@@ -148,13 +149,14 @@ backend/
 │   ├── models.py          Reading table
 │   ├── schemas.py         request and response rules (Pydantic)
 │   ├── readings_api.py    /readings, /status, /history, /devices, /thresholds
+│   ├── capacity_api.py    /capacity
 │   ├── live_api.py        WebSocket /ws
 │   ├── soh_api.py         /soh/model-info, /soh/predict
 │   └── services/
 │       ├── alerts.py      status decision
 │       ├── live.py        connected WebSocket clients
 │       └── soh_model.py   guarded model loading and prediction
-├── tests/                 pytest tests (alerts, API, SoH service)
+├── tests/                 pytest tests (alerts, API, SoH service, bridge, capacity)
 ├── bridge.py              Arduino (USB serial) -> POST /readings
 ├── simulator.py
 ├── ws_listen.py

@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 ## [Unreleased]
 
 ### Added
+- Measured capacity (`GET /capacity`, `backend/app/services/capacity.py`): finds each
+  discharge in a device's sensor readings and adds up the current over time (coulomb
+  counting) to give the delivered capacity in mAh, energy in Wh, duration, mean current and
+  temperature rise. A measured State of Health (capacity / rated 2200 mAh) is only given
+  for a run that started from a full charge (at least 4.15 V at rest) and ended at the
+  3.00 V cut-off without gaps; otherwise the reason is returned. Simulated readings are
+  refused because they use compressed time. 13 new tests. Dashboard panel "Measured
+  capacity". Verified with made-up test data only; no real discharge has been measured yet.
 - `GET /devices`: every device that has sent readings, with its source, number of readings,
   last time seen and last status, most recent first. `/status` and `/history` accept a
   `device_id` filter.

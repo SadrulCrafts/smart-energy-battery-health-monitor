@@ -72,3 +72,11 @@ export const STATUS_STYLE: Record<
     glow: "rgba(224, 82, 82, 0.5)",
   },
 };
+
+/** "4 h 12 min", "12 min 5 s", "45 s". */
+export function durationText(seconds: number): string {
+  const s = Math.round(seconds);
+  if (s < 60) return `${s} s`;
+  if (s < 3600) return `${Math.floor(s / 60)} min ${s % 60} s`;
+  return `${Math.floor(s / 3600)} h ${Math.floor((s % 3600) / 60)} min`;
+}

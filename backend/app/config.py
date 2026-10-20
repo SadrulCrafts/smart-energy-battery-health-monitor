@@ -39,3 +39,12 @@ CURRENT_HYSTERESIS_A = 0.1
 
 THRESHOLD_NOTE = ("Demonstration thresholds for a prototype. Not certified safety limits; "
                   "replace with the datasheet values of the actual cell.")
+
+
+# Measured capacity (services/capacity.py), for sensor readings only
+RATED_CAPACITY_MAH = 2200.0       # cell under test: seller's figure (8140 mWh / 3.7 V), not verified
+CAPACITY_CUTOFF_V = 3.00          # must match CUTOFF_V in the firmware
+CAPACITY_CUTOFF_MARGIN_V = 0.05   # a run whose last voltage is within this of the cut-off ended there
+CAPACITY_FULL_REST_V = 4.15       # resting voltage that counts as "started from full"
+CAPACITY_DISCHARGE_MIN_A = 0.05   # current below -0.05 A counts as discharging
+CAPACITY_MAX_GAP_S = 5.0          # readings come once per second; a longer gap breaks the run

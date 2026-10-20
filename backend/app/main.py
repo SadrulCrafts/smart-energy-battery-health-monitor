@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .capacity_api import router as capacity_router
 from .database import DATABASE_FILE, database_is_reachable, init_db
 from .live_api import router as live_router
 from .readings_api import router as readings_router
@@ -60,6 +61,7 @@ app.add_middleware(
 app.include_router(readings_router)
 app.include_router(live_router)
 app.include_router(soh_router)
+app.include_router(capacity_router)
 
 
 @app.get("/health", tags=["system"])

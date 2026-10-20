@@ -14,6 +14,7 @@ import { setTheme, useTheme } from "@/hooks/useTheme";
 import { phaseText, signed, SOURCE_LABEL, STATUS_STYLE } from "@/lib/format";
 import { CHART_COLORS } from "@/lib/theme";
 import BatteryCell from "./BatteryCell";
+import CapacityPanel from "./CapacityPanel";
 import Header from "./Header";
 import MetricTile from "./MetricTile";
 import ReadingsTable from "./ReadingsTable";
@@ -169,6 +170,7 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-stretch gap-5">
           <ReadingsTable readings={readings} />
           <SohPanel latest={latest} modelInfo={modelInfo} />
+          <CapacityPanel source={latest?.source ?? null} deviceId={latest?.device_id ?? null} />
         </div>
 
         <footer id="limits" className="flex scroll-mt-6 flex-wrap justify-between gap-x-6 gap-y-2 text-[13px] text-muted">
