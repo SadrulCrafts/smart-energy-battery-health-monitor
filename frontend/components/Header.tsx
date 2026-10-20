@@ -4,9 +4,9 @@
  * Page title, the data-source label, the live connection state and the theme switch.
  */
 
-import type { Source } from "@/lib/api";
+import type { Device, Source } from "@/lib/api";
 import { ageText, SOURCE_LABEL } from "@/lib/format";
-import type { Connection } from "@/hooks/useBatteryData";
+import { keyOf, type Connection } from "@/hooks/useBatteryData";
 import type { Theme } from "@/lib/theme";
 
 interface HeaderProps {
@@ -16,6 +16,9 @@ interface HeaderProps {
   ageSeconds: number | null;
   theme: Theme;
   onToggleTheme: () => void;
+  devices: Device[];
+  activeKey: string | null;
+  onSelectDevice: (key: string) => void;
 }
 
 function SourceChip({ source }: { source: Source }) {
@@ -34,6 +37,38 @@ function SourceChip({ source }: { source: Source }) {
     return <span className={`${base} bg-ink font-semibold text-bg`}>{SOURCE_LABEL.sensor}</span>;
   }
   return <span className={`${base} border-[1.5px] border-ion font-medium text-ink`}>{SOURCE_LABEL.nasa}</span>;
+}
+
+const SOURCE_SHORT: Record<Source, string> = { simulated: "simulated", sensor: "sensor", nasa: "NASA" };
+
+function DevicePicker({
+  devices,
+  activeKey,
+  onSelect,
+}: {
+  devices: Device[];
+  activeKey: string | null;
+  onSelect: (key: string) => void;
+}) {
+  return (
+    <label className="inline-flex min-h-9 items-center gap-2 rounded-full border border-line bg-panel pr-2 pl-3.5 text-[13.5px] text-ink-2">
+      Device
+      <select
+        value={activeKey ?? ""}
+        onChange={(event) => onSelect(event.target.value)}
+        className="cursor-pointer rounded-md bg-transparent py-1 font-medium text-ink outline-none"
+      >
+        {devices.map((device) => {
+          const key = keyOf(device.source, device.device_id);
+          return (
+            <option key={key} value={key}>
+              {device.device_id ?? "unknown"} ({SOURCE_SHORT[device.source]})
+            </option>
+          );
+        })}
+      </select>
+    </label>
+  );
 }
 
 function LivePill({ connection, ageSeconds }: { connection: Connection; ageSeconds: number | null }) {
@@ -60,7 +95,17 @@ function LivePill({ connection, ageSeconds }: { connection: Connection; ageSecon
   );
 }
 
-export default function Header({ source, deviceLine, connection, ageSeconds, theme, onToggleTheme }: HeaderProps) {
+export default function Header({
+  source,
+  deviceLine,
+  connection,
+  ageSeconds,
+  theme,
+  onToggleTheme,
+  devices,
+  activeKey,
+  onSelectDevice,
+}: HeaderProps) {
   const next = theme === "dark" ? "Light theme" : "Dark theme";
   return (
     <header className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3.5">
@@ -69,6 +114,7 @@ export default function Header({ source, deviceLine, connection, ageSeconds, the
         <p className="mt-0.5 text-sm text-ink-2">{deviceLine}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2.5">
+        {devices.length > 1 && <DevicePicker devices={devices} activeKey={activeKey} onSelect={onSelectDevice} />}
         {source && <SourceChip source={source} />}
         <LivePill connection={connection} ageSeconds={ageSeconds} />
         <button

@@ -84,6 +84,20 @@ class ReadingOut(BaseModel):
         return as_utc(value)
 
 
+class DeviceOut(BaseModel):
+    """One device that has sent readings (GET /devices)."""
+    source: Source
+    device_id: str | None
+    readings: int
+    last_seen: datetime
+    last_status: Status
+
+    @field_validator("last_seen")
+    @classmethod
+    def last_seen_to_utc(cls, value):
+        return as_utc(value)
+
+
 class StatusOut(BaseModel):
     has_data: bool
     total_readings: int

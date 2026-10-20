@@ -23,8 +23,9 @@ in Git. To start again with an empty database, stop the server and delete that f
 |---|---|---|
 | GET | `/health` | API, database and SoH model status, number of live clients |
 | POST | `/readings` | Store one reading; the server decides its status and SoH note |
-| GET | `/status` | Latest reading and total number of stored readings |
-| GET | `/history?limit=100&source=simulated` | Recent readings, oldest first (for charts) |
+| GET | `/status?device_id=simulator-1` | Latest reading and number of stored readings (all devices, or one) |
+| GET | `/history?limit=100&source=simulated&device_id=simulator-1` | Recent readings, oldest first (for charts); both filters optional |
+| GET | `/devices` | Every device that has sent readings: source, count, last seen, last status |
 | GET | `/thresholds` | Alert limits currently in use |
 | WS | `/ws` | Pushes every newly stored reading as `{"type": "reading", "data": {...}}` |
 | GET | `/soh/model-info` | Model details, training ranges and validity conditions |
@@ -146,7 +147,7 @@ backend/
 │   ├── database.py        SQLite engine, sessions, table creation
 │   ├── models.py          Reading table
 │   ├── schemas.py         request and response rules (Pydantic)
-│   ├── readings_api.py    /readings, /status, /history, /thresholds
+│   ├── readings_api.py    /readings, /status, /history, /devices, /thresholds
 │   ├── live_api.py        WebSocket /ws
 │   ├── soh_api.py         /soh/model-info, /soh/predict
 │   └── services/

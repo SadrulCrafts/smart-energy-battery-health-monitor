@@ -7,6 +7,17 @@
 
 export type Theme = "dark" | "light";
 
+/** Where the viewer's theme choice is remembered in the browser. */
+export const THEME_STORAGE_KEY = "bhm-theme";
+
+/**
+ * Runs in <head> before the page is drawn, so a viewer who chose the light theme
+ * never sees a flash of the dark one. Wrapped in try: storage can be blocked.
+ */
+export const THEME_INIT_SCRIPT =
+  `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");` +
+  `if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+
 export interface ChartColors {
   volt: string;
   amp: string;

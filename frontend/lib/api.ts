@@ -26,6 +26,15 @@ export interface Reading {
   alert_message: string | null;
 }
 
+/** One device that has sent readings (GET /devices). */
+export interface Device {
+  source: Source;
+  device_id: string | null;
+  readings: number;
+  last_seen: string;
+  last_status: Status;
+}
+
 export interface StatusOut {
   has_data: boolean;
   total_readings: number;
@@ -129,8 +138,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   health: () => request<Health>("/health"),
   status: () => request<StatusOut>("/status"),
-  history: (limit = 120, source?: Source) =>
-    request<Reading[]>(`/history?limit=${limit}${source ? `&source=${source}` : ""}`),
+  devices: () => request<Device[]>("/devices"),
+  history: (limit = 120, filter: { source?: Source; deviceId?: string | null } = {}) => {
+    const query = new URLSearchParams({ limit: String(limit) });
+    if (filter.source) query.set("source", filter.source);
+    if (filter.deviceId) query.set("device_id", filter.deviceId);
+    return request<Reading[]>(`/history?${query.toString()}`);
+  },
   thresholds: () => request<Thresholds>("/thresholds"),
   modelInfo: () => request<ModelInfo>("/soh/model-info"),
   predictSoh: (features: SohFeatures) =>

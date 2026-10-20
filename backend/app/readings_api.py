@@ -6,6 +6,7 @@ Endpoints for battery readings.
     POST /readings   - store one new reading (status decided by the alert service)
     GET  /status     - latest reading + total count
     GET  /history    - recent readings (oldest first, ready for charts)
+    GET  /devices    - every device that has sent readings, most recent first
     GET  /thresholds - the alert limits currently in use
 
 Every stored reading is also pushed to connected WebSocket clients (see live_api.py).
@@ -20,7 +21,7 @@ from sqlalchemy.orm import Session
 from . import config
 from .database import get_db
 from .models import Reading, utc_now
-from .schemas import ReadingCreate, ReadingOut, Source, StatusOut
+from .schemas import DeviceOut, ReadingCreate, ReadingOut, Source, StatusOut
 from .services.alerts import alert_tracker
 from .services.live import live_connections
 
@@ -65,12 +66,20 @@ async def create_reading(payload: ReadingCreate, db: DbSession):
 
 
 @router.get("/status", response_model=StatusOut)
-def get_status(db: DbSession):
+def get_status(
+    db: DbSession,
+    device_id: Annotated[str | None, Query(description="Only this device")] = None,
+):
     """Latest stored reading (or an empty state if there is none yet)."""
+    latest_query = select(Reading)
+    count_query = select(func.count()).select_from(Reading)
+    if device_id is not None:
+        latest_query = latest_query.where(Reading.device_id == device_id)
+        count_query = count_query.where(Reading.device_id == device_id)
     latest = db.scalars(
-        select(Reading).order_by(Reading.timestamp.desc(), Reading.id.desc()).limit(1)
+        latest_query.order_by(Reading.timestamp.desc(), Reading.id.desc()).limit(1)
     ).first()
-    total = db.scalar(select(func.count()).select_from(Reading)) or 0
+    total = db.scalar(count_query) or 0
     return StatusOut(
         has_data=latest is not None,
         total_readings=total,
@@ -83,15 +92,43 @@ def get_history(
     db: DbSession,
     limit: Annotated[int, Query(ge=1, le=1000, description="How many readings")] = 100,
     source: Annotated[Source | None, Query(description="Only this data source")] = None,
+    device_id: Annotated[str | None, Query(description="Only this device")] = None,
 ):
     """The most recent readings, returned oldest-first so charts can draw them directly."""
     query = select(Reading)
     if source is not None:
         query = query.where(Reading.source == source)
+    if device_id is not None:
+        query = query.where(Reading.device_id == device_id)
     query = query.order_by(Reading.timestamp.desc(), Reading.id.desc()).limit(limit)
     rows = list(db.scalars(query))
     rows.reverse()
     return rows
+
+
+@router.get("/devices", response_model=list[DeviceOut])
+def get_devices(db: DbSession):
+    """Every (source, device) pair that has sent readings, most recently active first."""
+    groups = db.execute(
+        select(
+            Reading.source,
+            Reading.device_id,
+            func.count().label("readings"),
+            func.max(Reading.id).label("last_id"),
+        ).group_by(Reading.source, Reading.device_id)
+    ).all()
+    devices = []
+    for group in groups:
+        last = db.get(Reading, group.last_id)
+        devices.append(DeviceOut(
+            source=group.source,
+            device_id=group.device_id,
+            readings=group.readings,
+            last_seen=last.timestamp,
+            last_status=last.status,
+        ))
+    devices.sort(key=lambda d: d.last_seen, reverse=True)
+    return devices
 
 
 @router.get("/thresholds", tags=["system"])

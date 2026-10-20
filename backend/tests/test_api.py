@@ -107,3 +107,33 @@ def test_health_reports_version(client):
     body = client.get("/health").json()
     assert body["service"] == "battery-health-monitor-api"
     assert body["version"]
+
+
+def test_devices_lists_each_device_most_recent_first(client):
+    assert client.get("/devices").json() == []
+    client.post("/readings", json=reading(device_id="simulator-1", voltage_v=3.8))
+    client.post("/readings", json=reading(device_id="simulator-1", voltage_v=3.15))
+    client.post("/readings", json=reading(source="sensor", device_id="arduino-uno-1", voltage_v=3.9))
+
+    devices = client.get("/devices").json()
+    assert [(d["source"], d["device_id"]) for d in devices] == [
+        ("sensor", "arduino-uno-1"),
+        ("simulated", "simulator-1"),
+    ]
+    simulator = devices[1]
+    assert simulator["readings"] == 2
+    assert simulator["last_status"] == "warning"
+
+
+def test_history_and_status_can_filter_by_device(client):
+    client.post("/readings", json=reading(device_id="a", voltage_v=3.8))
+    client.post("/readings", json=reading(device_id="b", voltage_v=3.7))
+    client.post("/readings", json=reading(device_id="a", voltage_v=3.6))
+
+    history = client.get("/history?device_id=a").json()
+    assert [r["voltage_v"] for r in history] == [3.8, 3.6]
+
+    status = client.get("/status?device_id=b").json()
+    assert status["total_readings"] == 1
+    assert status["latest"]["device_id"] == "b"
+    assert client.get("/status").json()["total_readings"] == 3

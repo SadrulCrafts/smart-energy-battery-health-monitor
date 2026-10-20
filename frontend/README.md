@@ -31,11 +31,11 @@ Production build check:
 
 | Part | Shows |
 |---|---|
-| Header | Data source label, live connection state, theme switch |
+| Header | Device picker (when more than one device sends data), data source label, live connection state, theme switch |
 | Status banner | The status and message the backend's alert service gave the latest reading |
 | Battery graphic | Where the voltage sits on a 2.8 to 4.3 V scale, with the alert zones shaded. It is **not** state of charge |
 | Voltage chart | The last 120 readings with warning and critical bands; hover for exact values |
-| Tiles | Current, temperature, power (voltage times current) and the number of stored readings |
+| Tiles | Current, temperature, power (voltage times current) and the number of readings stored for the shown device |
 | Recent readings | The newest 8 readings with their status |
 | State of health | "Not evaluated" for live readings, the model's details, and a button that runs the model on one NASA example |
 
@@ -47,18 +47,19 @@ its own, filling any gap from `/history`.
 ```
 frontend/
 ├── app/
-│   ├── layout.tsx        fonts, page title, dark theme by default
+│   ├── layout.tsx        fonts, page title, applies the saved theme before drawing
 │   ├── globals.css       brand colors (dark and light) as CSS variables
 │   ├── page.tsx          renders the dashboard
 │   └── icon.svg          browser tab icon
 ├── components/           one file per part of the page
 ├── hooks/
-│   ├── useBatteryData.ts REST history + live WebSocket + reconnect
+│   ├── useBatteryData.ts devices, per-device history + live WebSocket + reconnect
+│   ├── useTheme.ts       current theme, saved in the browser
 │   └── useNow.ts         ticking clock for "updated 3 s ago"
 └── lib/
     ├── api.ts            backend types and requests
     ├── format.ts         number, time and status formatting
-    └── theme.ts          chart colors per theme
+    └── theme.ts          chart colors per theme, theme start-up script
 ```
 
 ## Design notes
@@ -75,6 +76,7 @@ frontend/
 
 ## Known limitations
 
-- The theme choice is not remembered after a page reload.
+- The selected device is not remembered after a reload; the page then shows the most
+  recently active device.
 - Times on the chart are the server's clock. The simulator compresses time (for example
   300x), so one minute on the chart can hold several simulated hours.

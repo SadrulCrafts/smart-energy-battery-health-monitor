@@ -7,11 +7,12 @@
  * each part to its own component.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useBatteryData } from "@/hooks/useBatteryData";
 import { useNow } from "@/hooks/useNow";
+import { setTheme, useTheme } from "@/hooks/useTheme";
 import { phaseText, signed, SOURCE_LABEL, STATUS_STYLE } from "@/lib/format";
-import { CHART_COLORS, type Theme } from "@/lib/theme";
+import { CHART_COLORS } from "@/lib/theme";
 import BatteryCell from "./BatteryCell";
 import Header from "./Header";
 import MetricTile from "./MetricTile";
@@ -28,14 +29,12 @@ const DEVICE_KIND = {
 } as const;
 
 export default function Dashboard() {
-  const { readings, latest, thresholds, modelInfo, health, totalStored, connection, error } = useBatteryData();
+  // null = follow the most recently active device; a key once the viewer picks one
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const { devices, activeKey, readings, latest, thresholds, modelInfo, health, totalStored, connection, error } =
+    useBatteryData(selectedKey);
   const now = useNow();
-  const [theme, setTheme] = useState<Theme>("dark");
-
-  // Apply the theme to <html data-theme="..."> so the CSS variables switch
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
+  const theme = useTheme();
 
   const colors = CHART_COLORS[theme];
   const ageSeconds = latest && now > 0 ? Math.max(0, now - Date.parse(latest.timestamp) / 1000) : null;
@@ -70,6 +69,9 @@ export default function Dashboard() {
           ageSeconds={ageSeconds}
           theme={theme}
           onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
+          devices={devices}
+          activeKey={activeKey}
+          onSelectDevice={setSelectedKey}
         />
 
         <StatusBanner latest={latest} error={error} />
@@ -156,7 +158,7 @@ export default function Dashboard() {
             trend={powers}
           />
           <MetricTile
-            label="Readings stored"
+            label="Readings from this device"
             value={totalStored.toLocaleString("en-US")}
             unit=""
             note={`${alertCount} of the last ${readings.length} outside the limits`}

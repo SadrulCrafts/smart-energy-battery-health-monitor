@@ -22,21 +22,34 @@ dashboard and (next) IoT sensors to monitor a lithium-ion cell.
 - **Guarded SoH service**: the model only answers inside the conditions it was trained on
   and says "not evaluated" everywhere else.
 - **Dashboard** (Next.js + Tailwind + Recharts): live battery graphic, voltage chart with
-  alert zones, current, temperature and power, recent readings, dark and light themes,
-  phone layout.
+  alert zones, current, temperature and power, recent readings, a device picker when several devices send data, dark and light
+  themes (remembered), phone layout.
 - **Simulator** that sends labeled simulated readings in the same format the Arduino
   bridge will use later.
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    subgraph inputs["Data in"]
+        SIM["simulator.py<br/>(simulated)"]
+        ARD["Arduino Uno<br/>INA219 + DS18B20<br/>(sensor)"] -- "USB serial" --> BR["bridge.py"]
+    end
+    SIM -- "POST /readings" --> API
+    BR -- "POST /readings" --> API
+    subgraph backend["FastAPI backend"]
+        API["REST API"] --> AL["Alert rules<br/>with hysteresis"]
+        API --> DB[("SQLite<br/>monitor.db")]
+        SOH["Guarded SoH service"]
+    end
+    API -- "WebSocket /ws" --> UI["Next.js dashboard<br/>(port 3000)"]
+    UI -- "/devices, /history, /status" --> API
+    NASA["NASA PCoE dataset<br/>(lab data)"] --> TR["model/scripts"] --> JOB["soh_model.joblib"] --> SOH
+    UI -- "POST /soh/predict" --> SOH
 ```
- simulator.py  ──POST /readings──►  FastAPI backend  ──►  SQLite (backend/data/monitor.db)
- (v0.4.0: Arduino + sensors)          │   alert rules (config.py)
-                                       │   SoH model service (guarded)
-                                       └──WebSocket /ws──►  Next.js dashboard (port 3000)
 
- NASA dataset ──► model/scripts ──► soh_model.joblib ──► POST /soh/predict
-```
+Every reading keeps its `source` (`simulated`, `sensor` or `nasa`) and `device_id` from the
+moment it is sent, so the three kinds of data never mix.
 
 ## Data sources are kept separate
 
