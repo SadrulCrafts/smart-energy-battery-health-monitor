@@ -18,6 +18,9 @@ Wiring and safety: [docs/hardware/wiring.md](../docs/hardware/wiring.md).
 
 Close the Serial Monitor before starting `bridge.py`: only one program can use the port.
 
+The LED (D8) and buzzer (D9) are optional. Without them the firmware works the same; the
+pins are simply not connected, and the dashboard still shows every alert.
+
 ## Output
 
 One line per message:
@@ -43,7 +46,7 @@ INFO load disconnected: voltage at or below cut-off. Press reset to start again.
 |---|---|---|
 | `CUTOFF_V` | 3.00 V | Disconnect the load at or below this voltage |
 | `START_MIN_V` | 3.30 V | Only start a discharge above this voltage |
-| `WARNING_V` | 3.20 V | LED blinks below this while discharging |
+| `WARNING_V` | 3.20 V | LED blinks below this while discharging (if an LED is fitted) |
 | `TEMP_CUTOFF_C` | 45 °C | Disconnect the load at or above this temperature |
 | `CONFIRM_READINGS` | 3 | Readings in a row needed before a cut-off |
 | `RELAY_ACTIVE_LOW` | `true` | Set to `false` if your relay switches on with HIGH |

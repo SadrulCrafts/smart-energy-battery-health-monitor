@@ -18,6 +18,10 @@ All notable changes to this project are documented in this file.
   the backend tests (Python 3.11), lints and builds the dashboard (Node 24), and compiles
   the firmware for the Arduino Uno. Tests that need the trained model are skipped there
   because the model file is not stored in Git. CI badge in the README.
+- Hardware guide updated to the parts actually bought: MCU-219 INA219, DS18B20 with
+  adapter, low-level-trigger relay, 5 W load resistor (with heat warning), 2200 mAh cell;
+  LED and buzzer marked optional; a polarity check for when no multimeter is available;
+  no charging until a proper charger is available.
 - Alert hysteresis: an alert clears only after the value moves back past its threshold by
   a margin (0.05 V, 2 °C, 0.1 A), tracked separately per device. The message says when a
   held alert will clear. Margins are shown in `/thresholds`.
